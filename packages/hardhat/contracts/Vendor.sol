@@ -8,6 +8,7 @@ contract Vendor is Ownable {
   uint256 public constant tokensPerEth = 100;
 
   event BuyTokens(address buyer, uint256 amountOfETH, uint256 amountOfTokens);
+  event SellTokens(address seller, uint256 tokenAmount);
 
   YourToken public yourToken;
 
@@ -23,8 +24,25 @@ contract Vendor is Ownable {
     emit BuyTokens(msg.sender, msg.value, amountOfTokens);
   }
 
-  // ToDo: create a withdraw() function that lets the owner withdraw ETH
+  //create a withdraw() function that lets the owner withdraw ETH
+   function withdraw() public onlyOwner {
+    uint256 amount = address(this).balance;
+    require(amount > 0, "You have a zero ETH balance");
+    (bool success,) = msg.sender.call{value: amount}("");
+    require(success, "Failed to send Ether");
+  }
 
-  // ToDo: create a sellTokens() function:
+  //create a sellTokens() function:
+  function sellTokens(uint256 amount) public {    
+    require(amount > 0, "You have a zero ETH balance");
+    uint256 tokenBalance = yourToken.balanceOf(msg.sender);
+    require(tokenBalance >= amount, "Your token balance is lower than what you are attempting to sell");   
+    uint256 tokenAmount = amount / tokensPerEth;
+    (bool success) = yourToken.transferFrom(msg.sender, address(this), amount);
+    require(success, "Failed to send Tokens");
+    (success,) = msg.sender.call{value: tokenAmount}("");
+    require(success, "Failed to send Tokens");
+    emit SellTokens(msg.sender,amount);
+  }
 
 }
